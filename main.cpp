@@ -18,6 +18,8 @@
 #define VWIDTH 480
 #define VHEIGHT 640
 #define VERTICAL 1
+#define THRESHES 6
+#define ROIWIDTH 10
 
 using namespace cv;
 using namespace std;
@@ -71,9 +73,9 @@ threshes::threshes(Scalar lower_th, Scalar upper_th)
 
 //Global variables
 roi click(Point(100, 100), Point(110, 110));
-roi r1(Point(100, 100), Point(110, 110));
+roi r1(Point(100, 100), Point(120, 120));
 vector<roi> samples;
-vector<threshes> thresholds;
+vector<threshes> thresholds(6, threshes());
 Mat region;
 //vector<roi> samples2(6, roi());
 int clickCount = 0;
@@ -141,7 +143,7 @@ void mousecb(int event, int x, int y, int flags, void* userdata)
     if((event == EVENT_LBUTTONDOWN)&&(clickCount < 6))
     {
 	cout<<"Left mouse button pressed at ("<<x<<","<<y<<")\n";
-	samples.push_back(roi(Point(x, y), Point(x+10, y+10)));
+	samples.push_back(roi(Point(x, y), Point(x+ROIWIDTH, y+ROIWIDTH)));
 	cout<<"Vector Size: "<<samples.size()<<endl;
 	clickCount++;
     }
@@ -149,13 +151,17 @@ void mousecb(int event, int x, int y, int flags, void* userdata)
 
 int main(int argc, char** argv)
 {
-    Mat frame, thresh, hsv, 
+    Mat frame,  hsv, 
 	thresh2, camfeed;
+    Mat thresh(VWIDTH, VHEIGHT, CV_8U, Scalar(0));
+
+    vector<Mat> binaries(6, Mat(VWIDTH, VHEIGHT, CV_8U, Scalar(0)));
+    imshow("vector", binaries[0]);
     //Camera object
     VideoCapture camera;
     Scalar test(20 ,30, 40);
     int counter    = 0;
-
+    
     namedWindow("camfeed");
     namedWindow("rgb_thresh");
     
@@ -189,17 +195,40 @@ int main(int argc, char** argv)
 	drawRects(camfeed);
 	printText(camfeed, "Hello World!");
 	imshow("camfeed", camfeed);
-		
-	inRange(frame, Scalar(hue_lower, sat_lower, val_lower),
-		Scalar(hue_upper, sat_upper, val_upper), thresh2);
-	medianBlur(thresh2, thresh2, 7);
-	Point cent;
-	int area;
+
+	thresh = Mat(VWIDTH, VHEIGHT, CV_8U, Scalar(0));
+	for(int i=0; i<samples.size(); i++)
+	{
+	    //Get the median of regions of interest
+	    //Get the mean value of regions of interest
+	    //Get threshold based on that
+	    region = frame(Rect(samples[i].pt1, samples[i].pt2));
+	    Scalar mean, stdev;
+	    meanStdDev(region, mean, stdev);
+	    inRange(frame, mean-stdev*1.9, mean+stdev*1.9, binaries[i]);
+	    add(binaries[i], thresh, thresh);
+	}
+	
+	medianBlur(thresh, thresh, 11);
+	//region = frame(Rect(100, 100, 10, 10));
+	
+	//meanStdDev(region, mean, stdev);
+	//cout<<"mean: "<<mean<<"stdev: "<<stdev<<endl;
+	//imshow("region", region);
+	//inRange(frame, Scalar(hue_lower, sat_lower, val_lower),
+	//	Scalar(hue_upper, sat_upper, val_upper), thresh2);
+	//inRange(frame, mean - stdev*1.5, mean + stdev*1.5, thresh2);
+        //medianBlur(thresh2, thresh2, 7);
+	//Point cent;
+	//int area;
 	//getCentroid(thresh2, cent, area);
-	area = getArea(thresh2);
+	//area = getArea(thresh2);
 	//cout<<"white: "<<area/(VWIDTH*VHEIGHT*1.0)<<endl;
-	imshow("rgb_thresh", thresh2);
-		
+	//imshow("rgb_thresh", thresh2);
+	
+	//imshow("one", binaries[0]);
+	//imshow("two", binaries[1]);
+	imshow("thresh", thresh);    
 	char keypress = waitKey(10);
 
 	
