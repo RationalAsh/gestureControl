@@ -1,10 +1,19 @@
 /*
     OK. List of things to implement:
 
-    1. Automatic thresholding
-    2. Save thresholds in thresholds vector
-    3. Add in animated trackbars
-    4. Apply convexity defects to find number of fingers
+    1. Use keypress to get mat with hand in it
+    2. Click using mouse to mark regions of interest
+    3. Use keypress to build thresholds from mean and stdev
+    4. Store these thresholds in an array/vector
+    5. Start main loop of the program using theses thresholds.
+    6. Get frame from camera
+    7. Apply the six different thresholds to get six thresholded images
+    8. Add all the images together to get hand.
+    9. Use medianBlur to filter out noise
+   10. Get biggest contour
+   11. Find number of fingers using convexity defects
+   12. Map number of fingers to commands for arm movement
+   13. That's it I guess,,,
 */
 #include <iostream>
 #include <opencv2/core/core.hpp>
